@@ -1,0 +1,21 @@
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Name</th>
+      <th>Date</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  <% for (var i in alarms) { %>
+    <tr>
+      <th scope="row"><%= alarms[i].id %></th>
+      <td data-single-name-<%= alarms[i].id %>><%= alarms[i].name %></td>
+      <td data-single-date-<%= alarms[i].id %>="<%= alarms[i].date.toISOString() %>"><%= alarms[i].date.toLocaleString() %></td>
+      <td> <button type="button" data-toggle="modal" data-target="#singleAlarmModal" onclick="editSingle(<%= alarms[i].id %>)">upd</button> <button onclick="removeSingle(<%= alarms[i].id %>)">del</button> </td>
+    </tr>
+  <%}%>
+  </tbody>
+</table>
