@@ -1,0 +1,33 @@
+<div class="modal fade" id="singleAlarmModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel1" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel1">New single alarm</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="singleAlarmForm">
+          <input type="hidden" name="modal-id">
+          <div class="form-group">
+            <label for="modal-name" class="form-control-label">Name:</label>
+            <input type="text" class="form-control" name="modal-name" maxlength="255">
+          </div>
+          <div class="form-group">
+            <label for="modal-date" class="form-control-label">Date:</label>
+            <input type="date" class="form-control" name="modal-date">
+          </div>
+          <div class="form-group">
+            <label for="modal-time" class="form-control-label">Time:</label>
+            <input type="time" class="form-control" name="modal-time">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#singleAlarmForm')[0].reset();">Close</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="addNewSingle()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>

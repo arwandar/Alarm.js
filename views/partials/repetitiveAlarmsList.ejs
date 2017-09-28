@@ -1,0 +1,29 @@
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Name</th>
+      <th>Hour</th>
+      <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+      <th>Update</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+  <% for (var i in alarms) { %>
+    <tr>
+      <th scope="row"><%= alarms[i].id %></th>
+      <td data-repetitive-name-<%= alarms[i].id %>><%= alarms[i].name %></td>
+      <td data-repetitive-time-<%= alarms[i].id %>><%= alarms[i].time %></td>
+    <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-0 <% if (alarms[i].monday){%>checked <%}%> disabled='disabled'></td>
+      <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-1 <% if (alarms[i].monday){%>checked <%}%> disabled='disabled'></td>
+      <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-2 <% if (alarms[i].wednesday){%>checked <%}%> disabled='disabled'></td>
+      <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-3 <% if (alarms[i].thursday){%>checked <%}%> disabled='disabled'></td>
+      <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-4 <% if (alarms[i].friday){%>checked <%}%> disabled='disabled'></td>
+      <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-5 <% if (alarms[i].saturday){%>checked <%}%> disabled='disabled'></td>
+      <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-6 <% if (alarms[i].sunday){%>checked <%}%> disabled='disabled'></td>
+      <td> <button type="button" data-toggle="modal" data-target="#repetitiveAlarmModal" onclick="editRepetitive(<%= alarms[i].id %>)">upd</button> <button onclick="removeRepetitive(<%= alarms[i].id %>)">del</button> </td>
+    </tr>
+  <%}%>
+  </tbody>
+</table>
