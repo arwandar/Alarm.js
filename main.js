@@ -13,6 +13,7 @@ var bodyParser = require('body-parser'); // Charge le middleware de gestion des 
 var urlencodedParser = bodyParser.urlencoded({
     extended: false
 });
+const passport = require('passport');
 
 // VARIABLES DE CONFIGURATION //
 const bddParams = {
@@ -23,6 +24,13 @@ const bddParams = {
     "charset": "utf8mb4_unicode_ci",
     "timezone": "UTC"
 }
+
+const spotifyParams = {
+    clientID: '84690faa47484760805465606bac602f',
+    clientSecret: '2e8c55036fbc41b2821250af48b73084',
+    callbackURL: "http://localhost:3002/auth/spotify/callback"
+  }
+
 const expressPort = 3002;
 const dir = "/home/pi/Music/";
 
@@ -41,6 +49,19 @@ var db = new Knex({
 
 var tmpB = new Date();
 tmpB.setSeconds(tmpB.getSeconds() + 20);
+
+passport.use(new SpotifyStrategy(spotifyParams,
+    function(accessToken, refreshToken, profile, done) {
+    // asynchronous verification, for effect...
+    process.nextTick(function () {
+      // To keep the example simple, the user's spotify profile is returned to
+      // represent the logged-in user. In a typical application, you would want
+      // to associate the spotify account with a user record in your database,
+      // and return that user instead.
+      return done(null, profile);
+    });
+  }));
+));
 
 // INIT DES ALARMES EN BDD //
 db.select('*').from('SingleAlarm').then(function(rows) {
@@ -146,6 +167,32 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// GET /auth/spotify
+//   Use passport.authenticate() as route middleware to authenticate the
+//   request. The first step in spotify authentication will involve redirecting
+//   the user to spotify.com. After authorization, spotify will redirect the user
+//   back to this application at /auth/spotify/callback
+app.get('/auth/spotify',
+  passport.authenticate('spotify', {scope: ['user-read-email', 'user-read-private'], showDialog: true}),
+  function(req, res){
+// The request will be redirected to spotify for authentication, so this
+// function will not be called.
+});
+
+// GET /auth/spotify/callback
+//   Use passport.authenticate() as route middleware to authenticate the
+//   request. If authentication fails, the user will be redirected back to the
+//   login page. Otherwise, the primary route function function will be called,
+//   which, in this example, will redirect the user to the home page.
+app.get('/callback',
+  passport.authenticate('spotify', { failureRedirect: '/' }),
+  function(req, res) {
+    console.log('authenticate!!!');
+    res.redirect('/');
+  });
 
 app.get('/', function(req, res) {
     res.render('index.ejs');
