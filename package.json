@@ -12,8 +12,8 @@
         "knex": "*",
         "ejs": "*",
         "request": "",
-        "querystring ": "",
-        "cookie-parser ": "",
+        "querystring": "",
+        "cookie-parser": "",
         "spotify-web-api-node": "",
         "console-stamp": ""
     }
