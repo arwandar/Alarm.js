@@ -3,17 +3,19 @@ require("console-stamp")(console, {
 });
 
 // REQUIRE //
-const fs = require('fs');
-const lame = require('lame');
-const Speaker = require('speaker');
-const schedule = require('node-schedule');
-const express = require('express');
-const Knex = require('knex');
-var bodyParser = require('body-parser'); // Charge le middleware de gestion des paramètres
-var urlencodedParser = bodyParser.urlencoded({
-    extended: false
-});
-const passport = require('passport');
+
+const schedule = require('node-schedule'),
+    express = require('express'),
+    Knex = require('knex'),
+    bodyParser = require('body-parser'), // Charge le middleware de gestion des paramètres
+    urlencodedParser = bodyParser.urlencoded({
+        extended: false
+    }),
+    request = require('request'), // "Request" library
+    querystring = require('querystring'),
+    cookieParser = require('cookie-parser'),
+    SpotifyWebApi = require('spotify-web-api-node');
+
 
 // VARIABLES DE CONFIGURATION //
 const bddParams = {
@@ -25,21 +27,24 @@ const bddParams = {
     "timezone": "UTC"
 }
 
+const expressPort = 3003;
+
+var spotParams = {
+    'redirect_uri': 'http://arwandar.hopto.org:3003/callback', // Your redirect uri
+    'stateKey': 'France'
+};
+=======
+
 const spotifyParams = {
     clientID: '84690faa47484760805465606bac602f',
     clientSecret: '2e8c55036fbc41b2821250af48b73084',
     callbackURL: "http://localhost:3002/auth/spotify/callback"
   }
 
-const expressPort = 3002;
-const dir = "/home/pi/Music/";
 
 // VARIABLES GLOBALES //
 var repetitiveSchedules = new Array(),
     singleSchedules = new Array();
-var isPlaying = false,
-    consecutiveSongsPlayed = 0,
-    maxConsecutiveSongsPlayed = 10;
 
 var db = new Knex({
     client: 'mysql',
@@ -47,8 +52,34 @@ var db = new Knex({
     debug: false,
 });
 
-var tmpB = new Date();
-tmpB.setSeconds(tmpB.getSeconds() + 20);
+var spotifyApi;
+
+// INIT SPOTIFY
+db.select('*').from('config').then(function(row) {
+    spotParams.client_id = row[0].client_id;
+    spotParams.client_secret = row[0].client_secret;
+    spotParams.access_token = row[0].access_token;
+
+    spotifyApi = new SpotifyWebApi({
+        clientId: spotParams.client_id,
+        clientSecret: spotParams.client_secret,
+        redirectUri: spotParams.redirect_uri
+    });
+    if (!spotParams.access_token) {
+        console.log("MERCCI DE VOUS IDENTIFIER A CETTE URL http://arwandar.hopto.org:3003/login");
+    } else {
+        spotifyApi.setAccessToken(spotParams.access_token);
+    }
+
+})
+
+function updateAccessToken(obj) {
+    db.from('config').update({
+        'access_token': obj
+    }).catch(function(err) {
+        console.log(err);
+    });
+}
 
 passport.use(new SpotifyStrategy(spotifyParams,
     function(accessToken, refreshToken, profile, done) {
@@ -139,64 +170,131 @@ function startRepetitiveAlarm(alarm) {
 
 // LECTURE DE LA MUSIQUE
 function play() {
-    isPlaying = true;
-    if (consecutiveSongsPlayed > maxConsecutiveSongsPlayed) {
-        consecutiveSongsPlayed = 0;
-        isPlaying = false
-        return;
-    }
-    fs.readdir(dir, function(err, files) {
-        var file = dir + files[Math.floor(Math.random() * files.length)];
-        console.log('debut de la lecture', file);
-        fs.createReadStream(file)
-            .pipe(new lame.Decoder())
-            .on('format', function(format) {
-                this.pipe(new Speaker(format));
-            }).on('end', function() {
-                console.log('fin de la lecture!!', file);
-                consecutiveSongsPlayed++;
-                play();
-            });
-    })
+    console.log('MIAWWWWWWWWWWWWWWWWWWWWWW');
+    spotifyApi.transferMyPlayback({
+        'deviceIds': ['98bb0735e28656bac098d927d410c3138a4b5bca'],
+        'play': true
+    }).then(function(data) {
+        console.log(data.body);
+    }, function(err) {
+        console.error(err);
+    });
 }
+
+/**
+ * Generates a random string containing numbers and letters
+ * @param  {number} length The length of the string
+ * @return {string} The generated string
+ */
+var generateRandomString = function(length) {
+    var text = '';
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (var i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+};
 
 // CREATION DU SERVEUR EXPRESS
 const app = express();
-app.use(express.static('public'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
-app.use(passport.initialize());
-app.use(passport.session());
 
-// GET /auth/spotify
-//   Use passport.authenticate() as route middleware to authenticate the
-//   request. The first step in spotify authentication will involve redirecting
-//   the user to spotify.com. After authorization, spotify will redirect the user
-//   back to this application at /auth/spotify/callback
-app.get('/auth/spotify',
-  passport.authenticate('spotify', {scope: ['user-read-email', 'user-read-private'], showDialog: true}),
-  function(req, res){
-// The request will be redirected to spotify for authentication, so this
-// function will not be called.
-});
+app.use(express.static('public'))
+    .use(bodyParser.json())
+    .use(bodyParser.urlencoded({
+        extended: true
+    })).use(cookieParser());
 
-// GET /auth/spotify/callback
-//   Use passport.authenticate() as route middleware to authenticate the
-//   request. If authentication fails, the user will be redirected back to the
-//   login page. Otherwise, the primary route function function will be called,
-//   which, in this example, will redirect the user to the home page.
-app.get('/callback',
-  passport.authenticate('spotify', { failureRedirect: '/' }),
-  function(req, res) {
-    console.log('authenticate!!!');
-    res.redirect('/');
-  });
 
 app.get('/', function(req, res) {
     res.render('index.ejs');
 })
+
+app.get('/login', function(req, res) {
+
+    var state = generateRandomString(16);
+    res.cookie(spotParams.stateKey, state);
+    // your application requests authorization
+    var scope = 'playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private streaming user-follow-modify user-follow-read user-library-read user-library-modify user-read-private user-read-birthdate user-read-email user-top-read user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-recently-played';
+    res.redirect('https://accounts.spotify.com/authorize?' +
+        querystring.stringify({
+            response_type: 'code',
+            client_id: spotParams.client_id,
+            scope: scope,
+            redirect_uri: spotParams.redirect_uri,
+            state: state
+        }));
+});
+
+app.get('/callback', function(req, res) {
+
+    // your application requests refresh and access tokens
+    // after checking the state parameter
+
+    var code = req.query.code || null;
+    var state = req.query.state || null;
+    var storedState = req.cookies ? req.cookies[spotParams.stateKey] : null;
+
+    if (state === null || state !== storedState) {
+        res.redirect('/#' +
+            querystring.stringify({
+                error: 'state_mismatch'
+            }));
+    } else {
+        res.clearCookie(spotParams.stateKey);
+        var authOptions = {
+            url: 'https://accounts.spotify.com/api/token',
+            form: {
+                code: code,
+                redirect_uri: spotParams.redirect_uri,
+                grant_type: 'authorization_code'
+            },
+            headers: {
+                'Authorization': 'Basic ' + (new Buffer(spotParams.client_id + ':' + spotParams.client_secret).toString('base64'))
+            },
+            json: true
+        };
+
+        request.post(authOptions, function(error, response, body) {
+            if (!error && response.statusCode === 200) {
+                spotifyApi.setAccessToken(body.access_token);
+                updateAccessToken(body.access_token);
+                res.status(200).send()
+            } else {
+                res.redirect('/#' +
+                    querystring.stringify({
+                        error: 'invalid_token'
+                    }));
+            }
+        });
+    }
+});
+
+app.get('/refresh_token', function(req, res) {
+
+    // requesting access token from refresh token
+    var refresh_token = req.query.refresh_token;
+    var authOptions = {
+        url: 'https://accounts.spotify.com/api/token',
+        headers: {
+            'Authorization': 'Basic ' + (new Buffer(spotParams.client_id + ':' + spotParams.client_secret).toString('base64'))
+        },
+        form: {
+            grant_type: 'refresh_token',
+            refresh_token: refresh_token
+        },
+        json: true
+    };
+
+    request.post(authOptions, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            var access_token = body.access_token;
+            res.send({
+                'access_token': access_token
+            });
+        }
+    });
+});
 
 app.get('/singleAlarmsList', function(req, res) {
     db.select('*').from('SingleAlarm').then(function(rows) {
