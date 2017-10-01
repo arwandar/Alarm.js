@@ -3,6 +3,7 @@ require("console-stamp")(console, {
 });
 
 // REQUIRE //
+
 const schedule = require('node-schedule'),
     express = require('express'),
     Knex = require('knex'),
@@ -15,6 +16,7 @@ const schedule = require('node-schedule'),
     cookieParser = require('cookie-parser'),
     SpotifyWebApi = require('spotify-web-api-node');
 
+
 // VARIABLES DE CONFIGURATION //
 const bddParams = {
     "host": 'localhost',
@@ -24,12 +26,21 @@ const bddParams = {
     "charset": "utf8mb4_unicode_ci",
     "timezone": "UTC"
 }
+
 const expressPort = 3003;
 
 var spotParams = {
     'redirect_uri': 'http://arwandar.hopto.org:3003/callback', // Your redirect uri
     'stateKey': 'France'
 };
+=======
+
+const spotifyParams = {
+    clientID: '84690faa47484760805465606bac602f',
+    clientSecret: '2e8c55036fbc41b2821250af48b73084',
+    callbackURL: "http://localhost:3002/auth/spotify/callback"
+  }
+
 
 // VARIABLES GLOBALES //
 var repetitiveSchedules = new Array(),
@@ -69,6 +80,19 @@ function updateAccessToken(obj) {
         console.log(err);
     });
 }
+
+passport.use(new SpotifyStrategy(spotifyParams,
+    function(accessToken, refreshToken, profile, done) {
+    // asynchronous verification, for effect...
+    process.nextTick(function () {
+      // To keep the example simple, the user's spotify profile is returned to
+      // represent the logged-in user. In a typical application, you would want
+      // to associate the spotify account with a user record in your database,
+      // and return that user instead.
+      return done(null, profile);
+    });
+  }));
+));
 
 // INIT DES ALARMES EN BDD //
 db.select('*').from('SingleAlarm').then(function(rows) {
@@ -174,11 +198,13 @@ var generateRandomString = function(length) {
 
 // CREATION DU SERVEUR EXPRESS
 const app = express();
+
 app.use(express.static('public'))
     .use(bodyParser.json())
     .use(bodyParser.urlencoded({
         extended: true
     })).use(cookieParser());
+
 
 app.get('/', function(req, res) {
     res.render('index.ejs');
