@@ -48,6 +48,7 @@ db.select('*').from('config').then(function(row) {
     spotParams.client_id = row[0].client_id;
     spotParams.client_secret = row[0].client_secret;
     spotParams.access_token = row[0].access_token;
+    spotParams.refresh_token = row[0].refresh_token;
 
     spotifyApi = new SpotifyWebApi({
         clientId: spotParams.client_id,
@@ -57,6 +58,25 @@ db.select('*').from('config').then(function(row) {
     if (!spotParams.access_token) {
         console.log("MERCCI DE VOUS IDENTIFIER A CETTE URL http://arwandar.hopto.org:3003/login");
     } else {
+        var authOptions = {
+            url: 'https://accounts.spotify.com/api/token',
+            headers: {
+                'Authorization': 'Basic ' + (new Buffer(spotParams.client_id + ':' + spotParams.client_secret).toString('base64'))
+            },
+            form: {
+                grant_type: 'refresh_token',
+                refresh_token: spotParams.refresh_token
+            },
+            json: true
+        };
+
+        request.post(authOptions, function(error, response, body) {
+            if (!error && response.statusCode === 200) {
+                updateAccessToken(body.access_token);
+                updateRefreshToken(body.refresh_token);
+            }
+        });
+
         spotifyApi.setAccessToken(spotParams.access_token);
     }
 
@@ -70,13 +90,17 @@ function updateAccessToken(obj) {
     });
 }
 
+function updateRefreshToken(obj) {
+    db.from('config').update({
+        'refresh_token': obj
+    }).catch(function(err) {
+        console.log(err);
+    });
+}
+
 // INIT DES ALARMES EN BDD //
 db.select('*').from('SingleAlarm').then(function(rows) {
     for (let i in rows) {
-        console.log(rows[i].date.toLocaleString());
-        for (var j in rows[i].date) {
-            console.log(rows[i].date[j])
-        }
         startSingleAlarm(rows[i]);
     }
 })
@@ -183,6 +207,11 @@ app.get('/', function(req, res) {
     res.render('index.ejs');
 })
 
+app.get('/test', function(req, res) {
+    play();
+    res.status(200).send();
+})
+
 app.get('/login', function(req, res) {
 
     var state = generateRandomString(16);
@@ -232,6 +261,7 @@ app.get('/callback', function(req, res) {
             if (!error && response.statusCode === 200) {
                 spotifyApi.setAccessToken(body.access_token);
                 updateAccessToken(body.access_token);
+                updateRefreshToken(body.refresh_token);
                 res.status(200).send()
             } else {
                 res.redirect('/#' +
@@ -241,32 +271,6 @@ app.get('/callback', function(req, res) {
             }
         });
     }
-});
-
-app.get('/refresh_token', function(req, res) {
-
-    // requesting access token from refresh token
-    var refresh_token = req.query.refresh_token;
-    var authOptions = {
-        url: 'https://accounts.spotify.com/api/token',
-        headers: {
-            'Authorization': 'Basic ' + (new Buffer(spotParams.client_id + ':' + spotParams.client_secret).toString('base64'))
-        },
-        form: {
-            grant_type: 'refresh_token',
-            refresh_token: refresh_token
-        },
-        json: true
-    };
-
-    request.post(authOptions, function(error, response, body) {
-        if (!error && response.statusCode === 200) {
-            var access_token = body.access_token;
-            res.send({
-                'access_token': access_token
-            });
-        }
-    });
 });
 
 app.get('/singleAlarmsList', function(req, res) {
@@ -325,7 +329,6 @@ app.post('/repetitive', function(req, res) {
     console.log('/repetitive', row);
     if (row.id) {
         updateAlarm(row, 'RepetitiveAlarm', function() {
-            console.log(repetitiveSchedules);
             repetitiveSchedules[row.id].cancel();
             startRepetitiveAlarm(row);
         })
