@@ -24,10 +24,10 @@ const bddParams = {
     "charset": "utf8mb4_unicode_ci",
     "timezone": "UTC"
 }
-const expressPort = 3003;
+const expressPort = 3002;
 
 var spotParams = {
-    'redirect_uri': 'http://arwandar.hopto.org:3003/callback', // Your redirect uri
+    'redirect_uri': 'http://localhost:' + expressPort + '/callback', // Your redirect uri
     'stateKey': 'France'
 };
 
@@ -58,29 +58,38 @@ db.select('*').from('config').then(function(row) {
     if (!spotParams.access_token) {
         console.log("MERCCI DE VOUS IDENTIFIER A CETTE URL http://arwandar.hopto.org:3003/login");
     } else {
-        var authOptions = {
-            url: 'https://accounts.spotify.com/api/token',
-            headers: {
-                'Authorization': 'Basic ' + (new Buffer(spotParams.client_id + ':' + spotParams.client_secret).toString('base64'))
-            },
-            form: {
-                grant_type: 'refresh_token',
-                refresh_token: spotParams.refresh_token
-            },
-            json: true
-        };
+        getNewTokens();
+    }
+}).catch(function(err) {
+    console.log(err);
+});
 
-        request.post(authOptions, function(error, response, body) {
-            if (!error && response.statusCode === 200) {
-                updateAccessToken(body.access_token);
+function getNewTokens() {
+    var authOptions = {
+        url: 'https://accounts.spotify.com/api/token',
+        headers: {
+            'Authorization': 'Basic ' + (new Buffer(spotParams.client_id + ':' + spotParams.client_secret).toString('base64'))
+        },
+        form: {
+            grant_type: 'refresh_token',
+            refresh_token: spotParams.refresh_token
+        },
+        json: true
+    };
+
+    request.post(authOptions, function(error, response, body) {
+        if (!error && response.statusCode === 200) {
+            console.log(body);
+            updateAccessToken(body.access_token);
+            if (body.refresh_token) {
                 updateRefreshToken(body.refresh_token);
             }
-        });
 
-        spotifyApi.setAccessToken(spotParams.access_token);
-    }
+        }
+    });
 
-})
+    spotifyApi.setAccessToken(spotParams.access_token);
+}
 
 function updateAccessToken(obj) {
     db.from('config').update({
@@ -169,6 +178,7 @@ function startRepetitiveAlarm(alarm) {
 
 // LECTURE DE LA MUSIQUE
 function play() {
+    getNewTokens();
     console.log('MIAWWWWWWWWWWWWWWWWWWWWWW');
     spotifyApi.transferMyPlayback({
         'deviceIds': ['98bb0735e28656bac098d927d410c3138a4b5bca'],
@@ -236,6 +246,7 @@ app.get('/callback', function(req, res) {
     var code = req.query.code || null;
     var state = req.query.state || null;
     var storedState = req.cookies ? req.cookies[spotParams.stateKey] : null;
+    console.log(state);
 
     if (state === null || state !== storedState) {
         res.redirect('/#' +
