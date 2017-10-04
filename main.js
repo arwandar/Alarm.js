@@ -64,7 +64,7 @@ db.select('*').from('config').then(function(row) {
     console.log(err);
 });
 
-function getNewTokens() {
+function getNewTokens(callback) {
     var authOptions = {
         url: 'https://accounts.spotify.com/api/token',
         headers: {
@@ -81,14 +81,18 @@ function getNewTokens() {
         if (!error && response.statusCode === 200) {
             console.log(body);
             updateAccessToken(body.access_token);
+            spotParams.access_token = body.access_token;
             if (body.refresh_token) {
                 updateRefreshToken(body.refresh_token);
+                spotParams.refresh_token = body.refresh_token;
             }
-
+            spotifyApi.setAccessToken(spotParams.access_token);
+            if (callback != null) {
+                callback();
+            }
         }
     });
 
-    spotifyApi.setAccessToken(spotParams.access_token);
 }
 
 function updateAccessToken(obj) {
@@ -178,16 +182,18 @@ function startRepetitiveAlarm(alarm) {
 
 // LECTURE DE LA MUSIQUE
 function play() {
-    getNewTokens();
-    console.log('MIAWWWWWWWWWWWWWWWWWWWWWW');
-    spotifyApi.transferMyPlayback({
-        'deviceIds': ['98bb0735e28656bac098d927d410c3138a4b5bca'],
-        'play': true
-    }).then(function(data) {
-        console.log(data.body);
-    }, function(err) {
-        console.error(err);
+    getNewTokens(function() {
+        spotifyApi.transferMyPlayback({
+            'deviceIds': ['98bb0735e28656bac098d927d410c3138a4b5bca'],
+            'play': true
+        }).then(function(data) {
+            console.log(data.body);
+        }, function(err) {
+            console.error(err);
+        });
     });
+    console.log('MIAWWWWWWWWWWWWWWWWWWWWWW');
+
 }
 
 /**
