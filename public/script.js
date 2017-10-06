@@ -39,20 +39,22 @@ function editRepetitive(id) {
 }
 
 function removeSingle(id) {
-    $.post("/deleteSingle", {
-        id: id
-    }, ).done(function(data) {
+    $.ajax({
+        url: '/singles/' + id,
+        type: 'DELETE'
+    }).done(function(data) {
         getSingleAlarmsList();
     });
-}
+};
 
 function removeRepetitive(id) {
-    $.post("/deleteRepetitive", {
-        id: id
-    }, ).done(function(data) {
+    $.ajax({
+        url: '/repetitives/' + id,
+        type: 'DELETE'
+    }).done(function(data) {
         getRepetitiveAlarmsList();
     });
-}
+};
 
 $(document).ready(function() {
     getSingleAlarmsList();

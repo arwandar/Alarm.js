@@ -13,7 +13,6 @@
         "ejs": "*",
         "request": "",
         "querystring": "",
-        "cookie-parser": "",
         "spotify-web-api-node": "",
         "console-stamp": ""
     }
