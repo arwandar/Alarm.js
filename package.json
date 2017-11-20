@@ -1,19 +1,24 @@
 {
     "name": "Alarm",
     "version": "1.0.0",
-    "keywords": ["util", "functional"],
+    "keywords": [
+        "util",
+        "functional"
+    ],
     "author": "arwandar",
     "contributors": [],
     "dependencies": {
+        "console-stamp": "",
         "express": "*",
         "body-parser": "~1.10.1",
         "node-schedule": "*",
-        "mysql": "*",
-        "knex": "*",
         "ejs": "*",
+        "express-authentication": "",
+        "express-authentication-basic": "",
         "request": "",
+        "request-promise": "",
         "querystring": "",
-        "spotify-web-api-node": "",
-        "console-stamp": ""
+        "node-persist": "",
+        "bluebird": ""
     }
 }
