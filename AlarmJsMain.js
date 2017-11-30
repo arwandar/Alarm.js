@@ -59,7 +59,7 @@ function startRepetitiveAlarm(alarm) {
         'monday': 1,
         'tuesday': 2,
         'wednesday': 3,
-        'thusday': 4,
+        'thursday': 4,
         'friday': 5,
         'saturday': 6,
         'sunday': 7
