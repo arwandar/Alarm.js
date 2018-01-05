@@ -22,7 +22,7 @@
       <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-4 <% if (alarms[i].friday){%>checked <%}%> disabled='disabled'></td>
       <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-5 <% if (alarms[i].saturday){%>checked <%}%> disabled='disabled'></td>
       <td><input type="checkbox" data-repetitive-day-<%= alarms[i].id %>-6 <% if (alarms[i].sunday){%>checked <%}%> disabled='disabled'></td>
-      <td> <button type="button" data-toggle="modal" data-target="#repetitiveAlarmModal" onclick="editRepetitive(<%= alarms[i].id %>)">upd</button> <button onclick="removeRepetitive(<%= alarms[i].id %>)">del</button> </td>
+      <td> <button type="button" data-toggle="modal" data-target="#repetitiveAlarmModal" onclick="editRepetitive('<%= alarms[i].id %>')">upd</button> <button onclick="removeRepetitive('<%= alarms[i].id %>')">del</button> </td>
     </tr>
   <%}%>
   </tbody>
